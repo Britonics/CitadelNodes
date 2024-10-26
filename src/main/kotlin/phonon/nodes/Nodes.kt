@@ -4,48 +4,47 @@
 
 package phonon.nodes
 
-import kotlin.system.measureNanoTime
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.EnumMap
-import java.util.EnumSet
-import java.util.UUID
-import java.util.concurrent.ThreadLocalRandom
-import java.util.concurrent.Future
-import java.io.IOException
-import java.io.File
-import java.nio.file.*
-import java.nio.ByteBuffer
-import java.nio.channels.AsynchronousFileChannel
-import java.nio.file.StandardCopyOption
-import java.util.logging.Logger
 import com.google.gson.JsonObject
-import com.google.gson.stream.JsonWriter
-import org.bukkit.plugin.Plugin
-import org.bukkit.event.HandlerList
-import org.bukkit.entity.Player
-import org.bukkit.entity.EntityType
 import org.bukkit.*
 import org.bukkit.block.Block
 import org.bukkit.block.Chest
 import org.bukkit.block.DoubleChest
-import org.bukkit.Particle
-import org.bukkit.inventory.Inventory
-import org.bukkit.inventory.DoubleChestInventory
-import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.configuration.file.YamlConfiguration
-import phonon.nodes.constants.*
-import phonon.nodes.objects.*
-import phonon.nodes.serdes.*
-import phonon.nodes.event.*
-import phonon.nodes.tasks.*
-import phonon.nodes.utils.*
-import phonon.nodes.utils.Color
-import phonon.nodes.chat.Chat
+import org.bukkit.entity.EntityType
+import org.bukkit.entity.Player
+import org.bukkit.event.HandlerList
+import org.bukkit.inventory.DoubleChestInventory
+import org.bukkit.inventory.Inventory
+import org.bukkit.plugin.Plugin
+import org.bukkit.scheduler.BukkitRunnable
 import phonon.nodes.chat.ChatMode
+import phonon.nodes.constants.*
+import phonon.nodes.event.AllianceCreatedEvent
+import phonon.nodes.event.TruceExpiredEvent
 import phonon.nodes.listeners.NodesPlayerChestProtectListener
+import phonon.nodes.objects.*
+import phonon.nodes.serdes.Deserializer
+import phonon.nodes.serdes.Serializer
+import phonon.nodes.tasks.FileWriteTask
+import phonon.nodes.tasks.NodesDynmapJsonWriter
+import phonon.nodes.tasks.OverMaxClaimsReminder
+import phonon.nodes.tasks.SaveManager
+import phonon.nodes.utils.Color
+import phonon.nodes.utils.sanitizeString
+import phonon.nodes.utils.saveStringToFile
 import phonon.nodes.war.FlagWar
 import phonon.nodes.war.Truce
+import java.io.File
+import java.io.IOException
+import java.nio.ByteBuffer
+import java.nio.channels.AsynchronousFileChannel
+import java.nio.file.*
+import java.text.SimpleDateFormat
+import java.util.*
+import java.util.concurrent.Future
+import java.util.concurrent.ThreadLocalRandom
+import java.util.logging.Logger
+import kotlin.system.measureNanoTime
 
 // backup format
 private val BACKUP_DATE_FORMATTER = SimpleDateFormat("yyyy.MM.dd.HH.mm.ss"); 
@@ -109,6 +108,9 @@ public object Nodes {
     
     // flag that plugin is running
     internal var enabled: Boolean = false
+
+    // if we are running folia
+    public var folia: Boolean = checkIsFolia()
     
     // initialization:
     // - set links to plugin variables
@@ -3207,57 +3209,83 @@ public object Nodes {
      */
     internal fun showProtectedChests(town: Town, resident: Resident) {
         val player = resident.player()
-        if ( player === null ) {
+        if (player === null) {
             return
         }
 
         val protectedBlocks = town.protectedBlocks
 
-        // create repeating event to spawn particles each second
-        val task = object: BukkitRunnable() {
-            private val particle = Particle.VILLAGER_HAPPY
-            private val particleCount = 3
-            private val randomOffsetXZ = 0.05
-            private val randomOffsetY = 0.1
+        val particle = Particle.VILLAGER_HAPPY
+        val particleCount = 3
+        val randomOffsetXZ = 0.05
+        val randomOffsetY = 0.1
+        val maxRuns = 10
+        val period = 20L
 
-            public val MAX_RUNS = 10
-            public var runCount = 0
-
-            override public fun run() {
-                for ( block in protectedBlocks ) {
-
-                    // corners
-                    val location1 = Location(block.world, block.x.toDouble() + 0.1, block.y.toDouble() + 0.5, block.z.toDouble() + 0.1)
-                    val location2 = Location(block.world, block.x.toDouble() + 0.1, block.y.toDouble() + 0.5, block.z.toDouble() + 0.9)
-                    val location3 = Location(block.world, block.x.toDouble() + 0.9, block.y.toDouble() + 0.5, block.z.toDouble() + 0.1)
-                    val location4 = Location(block.world, block.x.toDouble() + 0.9, block.y.toDouble() + 0.5, block.z.toDouble() + 0.9)
-
-                    // centers
-                    val location5 = Location(block.world, block.x.toDouble() + 0.5, block.y.toDouble() + 0.5, block.z.toDouble())
-                    val location6 = Location(block.world, block.x.toDouble(), block.y.toDouble() + 0.5, block.z.toDouble() + 0.5)
-                    val location7 = Location(block.world, block.x.toDouble() + 0.5, block.y.toDouble() + 0.5, block.z.toDouble() + 1.0)
-                    val location8 = Location(block.world, block.x.toDouble() + 1.0, block.y.toDouble() + 0.5, block.z.toDouble() + 0.5)
-                    
-                    player.spawnParticle(particle, location1, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
-                    player.spawnParticle(particle, location2, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
-                    player.spawnParticle(particle, location3, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
-                    player.spawnParticle(particle, location4, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
-                    player.spawnParticle(particle, location5, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
-                    player.spawnParticle(particle, location6, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
-                    player.spawnParticle(particle, location7, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
-                    player.spawnParticle(particle, location8, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
-                }
+        // folia, ensure we are thread safe on the right scheduler
+        if (folia) {
+            var runCount = 0
+            Bukkit.getRegionScheduler().runAtFixedRate(plugin!!, player.location, { task ->
+                showProtectedChests(protectedBlocks, player, particle, particleCount, randomOffsetXZ, randomOffsetY)
 
                 runCount += 1
-                if ( runCount > MAX_RUNS ) {
-                    Bukkit.getScheduler().cancelTask(this.getTaskId())
+                if (runCount > maxRuns) {
+                    task.cancel()
+                }
+            }, 1L , period)
+            return
+        }
+
+        // create repeating event to spawn particles each second
+        val task = object : BukkitRunnable() {
+            var runCount = 0
+
+            override fun run() {
+                showProtectedChests(protectedBlocks, player, particle, particleCount, randomOffsetXZ, randomOffsetY)
+
+                runCount += 1
+                if (runCount > maxRuns) {
+                    this.cancel()
                     return
                 }
             }
         }
 
-        task.runTaskTimer(Nodes.plugin!!, 0, 20)
-        
+        task.runTaskTimer(plugin!!, 0, period)
+    }
+
+    fun showProtectedChests(blocks: Set<Block>, player: Player, particle: Particle, particleCount: Int, randomOffsetXZ: Double, randomOffsetY: Double) {
+        blocks.forEach { block ->
+            run {
+                val location1 =
+                    Location(block.world, block.x.toDouble() + 0.1, block.y.toDouble() + 0.5, block.z.toDouble() + 0.1)
+                val location2 =
+                    Location(block.world, block.x.toDouble() + 0.1, block.y.toDouble() + 0.5, block.z.toDouble() + 0.9)
+                val location3 =
+                    Location(block.world, block.x.toDouble() + 0.9, block.y.toDouble() + 0.5, block.z.toDouble() + 0.1)
+                val location4 =
+                    Location(block.world, block.x.toDouble() + 0.9, block.y.toDouble() + 0.5, block.z.toDouble() + 0.9)
+
+                // centers
+                val location5 =
+                    Location(block.world, block.x.toDouble() + 0.5, block.y.toDouble() + 0.5, block.z.toDouble())
+                val location6 =
+                    Location(block.world, block.x.toDouble(), block.y.toDouble() + 0.5, block.z.toDouble() + 0.5)
+                val location7 =
+                    Location(block.world, block.x.toDouble() + 0.5, block.y.toDouble() + 0.5, block.z.toDouble() + 1.0)
+                val location8 =
+                    Location(block.world, block.x.toDouble() + 1.0, block.y.toDouble() + 0.5, block.z.toDouble() + 0.5)
+
+                player.spawnParticle(particle, location1, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
+                player.spawnParticle(particle, location2, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
+                player.spawnParticle(particle, location3, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
+                player.spawnParticle(particle, location4, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
+                player.spawnParticle(particle, location5, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
+                player.spawnParticle(particle, location6, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
+                player.spawnParticle(particle, location7, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
+                player.spawnParticle(particle, location8, particleCount, randomOffsetXZ, randomOffsetY, randomOffsetXZ)
+            }
+        }
     }
 
     // ==============================================
@@ -3271,5 +3299,14 @@ public object Nodes {
     // just sets a flag that dynmap exists
     internal fun hookDynmap() {
         Nodes.dynmap = true
+    }
+
+    fun checkIsFolia() : Boolean {
+        try {
+            Class.forName("io.papermc.paper.threadedregions.RegionizedServer")
+            return true
+        } catch (e: ClassNotFoundException) {
+            return false
+        }
     }
 }

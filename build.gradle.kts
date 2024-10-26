@@ -100,7 +100,7 @@ dependencies {
 //        else -> implementation("phonon.blockedit:fast-block-edit:1.21-SNAPSHOT") // fallback to latest
 //    }
 
-    compileOnly("io.papermc.paper:paper-api:1.17.1-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.20.2-R0.1-SNAPSHOT")
 }
 
 application {
