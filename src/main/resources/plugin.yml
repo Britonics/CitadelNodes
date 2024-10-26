@@ -3,6 +3,7 @@ name: znodes
 version: $version
 api-version: 1.16
 softdepend: [Essentials]
+folia-supported: true
 commands:
   nodesadmin:
     description: Admin commands for Nodes
