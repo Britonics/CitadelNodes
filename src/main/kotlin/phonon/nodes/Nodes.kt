@@ -20,6 +20,7 @@ import java.nio.channels.AsynchronousFileChannel
 import java.nio.file.StandardCopyOption
 import java.util.logging.Logger
 import com.google.gson.JsonObject
+import com.google.gson.stream.JsonWriter
 import org.bukkit.plugin.Plugin
 import org.bukkit.event.HandlerList
 import org.bukkit.entity.Player
@@ -445,51 +446,60 @@ public object Nodes {
         Nodes.towns.clear()
         Nodes.nations.clear()
         Nodes.residents.clear()
-        
-        // load world from JSON storage
-        if ( Files.exists(Config.pathWorld) ) {
-            val (jsonResources, jsonTerritories) = Deserializer.worldFromJson(Config.pathWorld)
-            if ( jsonResources != null ) Nodes.loadResources(jsonResources)
-            if ( jsonTerritories != null ) Nodes.loadTerritories(jsonTerritories)
-            
-            // load world.json to dynmap folder
-            if ( Nodes.dynmap == true || Config.dynmapCopyTowns ) {
-                Files.createDirectories(Nodes.DYNMAP_DIR)
-                Files.copy(Config.pathWorld, Nodes.DYNMAP_PATH_WORLD, StandardCopyOption.REPLACE_EXISTING)    
-            }
-            
-            // load towns from json after main world load finishes
-            if ( Files.exists(Config.pathTowns) ) {
-                Deserializer.townsFromJson(Config.pathTowns)
 
-                // pre-generate initial json strings for all world objects
-                // (speeds up first save)
-                for ( resident in Nodes.residents.values ) {
-                    resident.getSaveState()
-                }
-                for ( town in Nodes.towns.values ) {
-                    town.getSaveState()
-                }
-                for ( nation in Nodes.nations.values ) {
-                    nation.getSaveState()
-                }
+        if (!Files.exists(Config.pathWorld)) {
+            // create the world file
+            try {
+                Files.createFile(Config.pathWorld)
 
-                // load towns.json to dynmap folder
-                if ( Nodes.dynmap ) {
-                    Files.copy(Config.pathTowns, Nodes.DYNMAP_PATH_TOWNS, StandardCopyOption.REPLACE_EXISTING)    
-                }
+                logger!!.severe("No world found: creating new empty world file")
+                val emptyWorld = Serializer.worldToJson(listOf(), listOf(), listOf())
+                saveStringToFile(emptyWorld, Config.pathWorld)
 
-                // load war state
-                Nodes.war.load()
-            }
-            else {
-                System.err.println("No towns found: ${Config.pathTowns.toString()}")
-                return true
+            } catch (e: IOException) {
+                e.printStackTrace()
+                return false
             }
         }
+
+        // load world from JSON storage
+        val (jsonResources, jsonTerritories) = Deserializer.worldFromJson(Config.pathWorld)
+        if ( jsonResources != null ) Nodes.loadResources(jsonResources)
+        if ( jsonTerritories != null ) Nodes.loadTerritories(jsonTerritories)
+
+        // load world.json to dynmap folder
+        if ( Nodes.dynmap == true || Config.dynmapCopyTowns ) {
+            Files.createDirectories(Nodes.DYNMAP_DIR)
+            Files.copy(Config.pathWorld, Nodes.DYNMAP_PATH_WORLD, StandardCopyOption.REPLACE_EXISTING)
+        }
+
+        // load towns from json after main world load finishes
+        if ( Files.exists(Config.pathTowns) ) {
+            Deserializer.townsFromJson(Config.pathTowns)
+
+            // pre-generate initial json strings for all world objects
+            // (speeds up first save)
+            for ( resident in Nodes.residents.values ) {
+                resident.getSaveState()
+            }
+            for ( town in Nodes.towns.values ) {
+                town.getSaveState()
+            }
+            for ( nation in Nodes.nations.values ) {
+                nation.getSaveState()
+            }
+
+            // load towns.json to dynmap folder
+            if ( Nodes.dynmap ) {
+                Files.copy(Config.pathTowns, Nodes.DYNMAP_PATH_TOWNS, StandardCopyOption.REPLACE_EXISTING)
+            }
+
+            // load war state
+            Nodes.war.load()
+        }
         else {
-            System.err.println("Failed to load world: ${Config.pathWorld.toString()}")
-            return false
+            System.err.println("No towns found: ${Config.pathTowns.toString()}")
+            return true
         }
 
         return true

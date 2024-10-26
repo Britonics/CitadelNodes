@@ -17,7 +17,7 @@ val JVM = 17 // 1.8 for 8, 11 for 11
 
 // target will be set to minecraft version by cli input parameter
 var target = "1.21"
-
+var kotlinVersion = "2.0.20"
 fun executeCommand(command: String): String {
     val process = Runtime.getRuntime().exec(command)
     val reader = BufferedReader(InputStreamReader(process.inputStream))
@@ -27,7 +27,7 @@ fun executeCommand(command: String): String {
 plugins {
     // Apply the Kotlin JVM plugin to add support for Kotlin.
     id("org.jetbrains.kotlin.jvm") version "2.0.20"
-    id("com.github.johnrengelman.shadow") version "7.0.0"
+    id("com.gradleup.shadow") version "8.3.2"
 
     // maven() // no longer needed in gradle 7
 
@@ -71,14 +71,14 @@ dependencies {
     compileOnly(platform("org.jetbrains.kotlin:kotlin-bom"))
 
     // Use the Kotlin JDK 8 standard library.
-    compileOnly("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     if (!project.hasProperty("no-kotlin")) { // shadow kotlin unless "no-kotlin" flag
-        configurations["resolvableImplementation"]("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    } else {
+        compileOnly("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     }
 
     // google json
-    compileOnly("com.google.code.gson:gson:2.8.6")
-    configurations["resolvableImplementation"]("com.google.code.gson:gson:2.8.6")
+    implementation("com.google.code.gson:gson:2.8.9")
     
     // protocol lib (nametag packets)
     compileOnly("com.comphenix.protocol:ProtocolLib:4.5.0")
@@ -122,8 +122,6 @@ tasks {
 //            }
 //        }
 
-        configurations = mutableListOf(project.configurations.named("resolvableImplementation").get())
-        relocate("com.google", "nodes.shadow.gson")
         //relocate("phonon.blockedit", "nodes.lib.blockedit")
     }
 }
@@ -134,7 +132,7 @@ tasks {
             "version" to project.version,
         )
         inputs.properties(props)
-        filesMatching("paper-plugin.yml") {
+        filesMatching("plugin.yml") {
             expand(props)
         }
     }
@@ -146,18 +144,15 @@ tasks {
     test {
         testLogging.showStandardStreams = true
     }
-}
 
-gradle.taskGraph.whenReady {
-    tasks {
-        named<ShadowJar>("shadowJar") {
-            if ( hasTask(":release") ) {
-                archiveBaseName.set("${project.name}-${target}-${version}")
-                minimize() // FOR PRODUCTION USE MINIMIZE
-            }
-            else {
-                archiveFileName.set("${project.name}-${target}-${version}-DEV-${executeCommand("git rev-parse --short HEAD")}.jar")
-            }
+    shadowJar {
+        relocate("com.google", "nodes.shadow.gson")
+        if (project.hasProperty("prod")) {
+            archiveBaseName.set("${project.name}-${target}-${version}")
+            minimize() // FOR PRODUCTION USE MINIMIZE
+        }
+        else {
+            archiveFileName.set("${project.name}-${target}-${version}-DEV-${executeCommand("git rev-parse --short HEAD")}.jar")
         }
     }
 }

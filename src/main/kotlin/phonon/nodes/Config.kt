@@ -24,10 +24,10 @@ public object Config {
     // engine configs
     // ===================================
     // main plugin path for config and saves 
-    public var pathPlugin = "plugins/nodes"
+    public var pathPlugin = "plugins/znodes"
     
     // folder for backups of json state files
-    public var pathBackup = Paths.get("plugins/nodes/backup").normalize()
+    public var pathBackup = Paths.get("plugins/znodes/backup").normalize()
     
     // file names for world, towns, war json files
     public var pathWorld = Paths.get(pathPlugin, "world.json").normalize()
