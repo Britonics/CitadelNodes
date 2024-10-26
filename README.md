@@ -1,5 +1,11 @@
-# Minecraft nodes plugin
+# znodes
 ![Nodes map screenshot](docs/src/images/nodes_map_example.jpg)
+Fork of the origin minecraft-nodes project by phonon
+
+I have no intention of supporting older versions, if you are on an outdated version, update.
+Other plugin modules such as the dynmap and ports plugin will be moved to seperate repos.
+
+
 Map painting but in block game. Contains server plugin and nodes dynmap viewer/editor extension.
 
 **Documentation:** <https://nodes.soy>  
