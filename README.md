@@ -1,5 +1,6 @@
 # znodes
-![Nodes map screenshot](docs/src/images/nodes_map_example.jpg)
+![Nodes map screenshot](https://i.ibb.co/GcccyBs/nodes-map-example.jpg)
+
 Fork of the origin minecraft-nodes project by phonon
 
 I have no intention of supporting older versions, if you are on an outdated version, update.
