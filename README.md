@@ -152,12 +152,16 @@ See [TODO.md](./TODO.md) for current high-level todo list.
 
 
 # License
-Licensed under [GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html).
-See [LICENSE.md](./LICENSE.md).
+
+All unmodified forked "minecraft-nodes" code is licensed under [GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html).
+
+All modified znodes code is licensed under [GNU AGPL](https://www.gnu.org/licenses/agpl-3.0.txt)
+See [LICENSE](./LICENSE).
 
 
 
 # Acknowledgements
 Special thanks to early contributors:
+- **phonon** original author
 - **Jonathan**: coding + map painting
 - **Doneions**: coding + testing + lole
