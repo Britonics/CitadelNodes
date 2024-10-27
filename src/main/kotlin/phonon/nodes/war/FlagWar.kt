@@ -23,6 +23,7 @@
 
 package phonon.nodes.war
 
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask
 import java.util.EnumSet
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -48,6 +49,8 @@ import phonon.nodes.objects.TerritoryChunk
 import phonon.nodes.objects.Town
 import phonon.nodes.event.*
 import phonon.nodes.constants.*
+import java.util.concurrent.TimeUnit
+
 //import phonon.blockedit.FastBlockEditSession
 
 // beacon color: wool material data values
@@ -134,7 +137,7 @@ public object FlagWar {
     internal var destructionEnabled: Boolean = false
 
     // ticks for the save task
-    public var saveTaskPeriod: Long = 20
+    public var saveTaskPeriod: Long = 1
     // ============================================
 
     // minecraft plugin variable
@@ -165,7 +168,7 @@ public object FlagWar {
     internal var needsSave: Boolean = false
 
     // periodic task to check for save
-    internal var saveTask: BukkitTask? = null
+    internal var saveTask: ScheduledTask? = null
 
     public fun initialize(flagMaterials: EnumSet<Material>) {
         FlagWar.flagMaterials.addAll(flagMaterials)
@@ -365,7 +368,7 @@ public object FlagWar {
 
         // create task
         FlagWar.saveTask?.cancel()
-        FlagWar.saveTask = Bukkit.getScheduler().runTaskTimerAsynchronously(Nodes.plugin!!, FlagWar.SaveLoop, FlagWar.saveTaskPeriod, FlagWar.saveTaskPeriod)
+        FlagWar.saveTask = Bukkit.getAsyncScheduler().runAtFixedRate(Nodes.plugin!!, {SaveLoop.run()}, FlagWar.saveTaskPeriod, FlagWar.saveTaskPeriod, TimeUnit.SECONDS)
     }
 
     /**
@@ -1104,11 +1107,9 @@ public object FlagWar {
         if ( progress >= attack.attackTime ) {
             // cancel thread, then schedule finalization function on main thread
             attack.thread.cancel()
-            Bukkit.getScheduler().runTask(Nodes.plugin!!, object: Runnable {
-                override fun run() {
-                    FlagWar.finishAttack(attack)
-                }
-            })
+            Bukkit.getGlobalRegionScheduler().run(Nodes.plugin!!) {
+                FlagWar.finishAttack(attack)
+            }
         }
         else { // update
             attack.progress = progress
@@ -1123,15 +1124,13 @@ public object FlagWar {
 
                 // update attack flag + block beacon indicator
                 // -> must schedule sync task on main thread
-                Bukkit.getScheduler().runTask(Nodes.plugin!!, object: Runnable {
-                    override fun run() {
-                        FlagWar.updateAttackFlag(
-                            attack.flagBlock,
-                            attack.skyBeaconColorBlocks,
-                            progressColor
-                        )
-                    }
-                })
+                Bukkit.getRegionScheduler().run(Nodes.plugin!!, attack.flagBlock.location) {
+                    FlagWar.updateAttackFlag(
+                        attack.flagBlock,
+                        attack.skyBeaconColorBlocks,
+                        progressColor
+                    )
+                }
             }
         }
     }

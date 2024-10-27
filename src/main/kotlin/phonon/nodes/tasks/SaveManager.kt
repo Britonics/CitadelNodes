@@ -10,17 +10,18 @@
 
 package phonon.nodes.tasks
 
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask
 import java.nio.file.Files
 import java.nio.file.Paths
 import org.bukkit.Bukkit
 import org.bukkit.plugin.Plugin
-import org.bukkit.scheduler.BukkitTask
 import phonon.nodes.Nodes
 import phonon.nodes.Config
+import java.util.concurrent.TimeUnit
 
 public object SaveManager {
 
-    private var task: BukkitTask? = null
+    private var task: ScheduledTask? = null
 
     public fun start(plugin: Plugin, period: Long) {
         if ( this.task !== null ) {
@@ -37,15 +38,13 @@ public object SaveManager {
 
             override public fun run() {
                 // schedule main thread to run save
-                Bukkit.getScheduler().runTask(plugin, object: Runnable {
-                    override fun run() {
-                        Nodes.saveWorldAsync()
-                    }
-                })
+                Bukkit.getGlobalRegionScheduler().run(plugin) {
+                    Nodes.saveWorldAsync()
+                }
             }
         }
 
-        this.task = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, task, period, period)
+        this.task = Bukkit.getAsyncScheduler().runAtFixedRate(plugin, { task.run() }, period, period, TimeUnit.SECONDS)
     }
 
     public fun stop() {

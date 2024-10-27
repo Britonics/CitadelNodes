@@ -9,6 +9,7 @@
 
 package phonon.nodes.objects
 
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
 import org.bukkit.entity.Player
@@ -18,6 +19,7 @@ import org.bukkit.scheduler.BukkitTask
 import phonon.nodes.Nodes
 import phonon.nodes.Config
 import phonon.nodes.PlayerScoreboardManager
+import java.util.concurrent.TimeUnit
 
 /**
  * Get armor stand custom name as VIEWED by input player
@@ -45,7 +47,7 @@ public fun townNametagViewedByPlayer(town: Town, viewer: Player): String {
 
 public object Nametag {
 
-    private var task: BukkitTask? = null
+    private var task: ScheduledTask? = null
 
     // lock for pipelined nametag update
     private var updateLock: Boolean = false
@@ -62,22 +64,20 @@ public object Nametag {
         }
 
         // scheduler for refreshing nametag text
-        val task = object: Runnable {
-            override public fun run() {
-                // schedule pipelined update
-                Nametag.pipelinedUpdateAllText()
+        val task = Runnable {
+            // schedule pipelined update
+            Nametag.pipelinedUpdateAllText()
 
-                // synchronous update
-                // schedule main thread to run income tick
-                // Bukkit.getScheduler().runTask(plugin, object: Runnable {
-                //     override fun run() {
-                //         Nametag.updateAllText() // synchronous
-                //     }
-                // })
-            }
+            // synchronous update
+            // schedule main thread to run income tick
+            // Bukkit.getScheduler().runTask(plugin, object: Runnable {
+            //     override fun run() {
+            //         Nametag.updateAllText() // synchronous
+            //     }
+            // })
         }
 
-        this.task = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, task, period, period)
+        this.task = Bukkit.getAsyncScheduler().runAtFixedRate(plugin, {task.run()}, period * 50, period * 50, TimeUnit.MILLISECONDS)
     }
 
     public fun stop() {
@@ -204,6 +204,7 @@ public object Nametag {
         while ( index < onlinePlayers.size ) {
             val idxStart = index
             val idxEnd = Math.min(index + updatesPerTick, onlinePlayers.size)
+            // bad class, anyway, no folia needed, later fix - TODO
             Bukkit.getScheduler().runTaskLater(Nodes.plugin!!, object: Runnable {
                 override fun run() {
                     for ( i in idxStart until idxEnd ) {

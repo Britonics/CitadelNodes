@@ -8,6 +8,7 @@
 
 package phonon.nodes.objects
 
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
 import org.bukkit.command.CommandSender
@@ -48,7 +49,7 @@ public class Resident(val uuid: UUID, val name: String) {
     var isNationLeader: Boolean = false  // purely for chat, NOT PERMISSIONS
 
     // town teleport thread and flag for outpost
-    var teleportThread: BukkitTask? = null
+    var teleportThread: ScheduledTask? = null
     var isTeleportingToOutpost: Boolean = false    // if true, gives outpost teleport cost refund if teleport fails
     var isTeleportingToNationTown: Boolean = false // if true, gives nation town teleport cost refund if teleport fails
 
@@ -56,7 +57,7 @@ public class Resident(val uuid: UUID, val name: String) {
     var invitingNation: Nation? = null
     var invitingTown: Town? = null
     var invitingPlayer: Player? = null
-    var inviteThread: BukkitTask? = null
+    var inviteThread: ScheduledTask? = null
 
     // minimap
     var minimap: Minimap? = null

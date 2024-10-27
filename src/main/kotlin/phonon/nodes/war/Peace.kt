@@ -15,6 +15,7 @@
 
 package phonon.nodes.war
 
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
 import org.bukkit.scheduler.BukkitTask
@@ -24,6 +25,7 @@ import phonon.nodes.Config
 import phonon.nodes.objects.Town
 import phonon.nodes.objects.Nation
 import phonon.nodes.constants.*
+import java.util.concurrent.TimeUnit
 
 // peace request status results
 public enum class PeaceRequest {
@@ -68,7 +70,7 @@ public object Peace {
     public val requests: ArrayList<PeaceRequestInstance> = arrayListOf()
 
     // threads to delete requests after timeout
-    public val requestTimers: HashMap<PeaceRequestInstance, BukkitTask> = hashMapOf()
+    public val requestTimers: HashMap<PeaceRequestInstance, ScheduledTask> = hashMapOf()
 
     // offer/accept peace request between two towns
     // if no peace offer exists, create new peace request
@@ -115,11 +117,8 @@ public object Peace {
             Peace.requests.add(peaceRequest)
 
             // create timeout thread
-            val timeoutThread = Bukkit.getScheduler().runTaskLaterAsynchronously(Nodes.plugin!!, object: Runnable {
-                override fun run() {
-                    Peace.cancelRequest(peaceRequest)
-                }
-            }, PEACE_REQUEST_TIMEOUT)
+            val timeoutThread = Bukkit.getAsyncScheduler().runDelayed(Nodes.plugin!!, {
+                Peace.cancelRequest(peaceRequest) }, PEACE_REQUEST_TIMEOUT * 50, TimeUnit.MILLISECONDS)
             
             Peace.requestTimers.put(peaceRequest, timeoutThread)
 

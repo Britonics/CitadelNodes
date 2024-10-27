@@ -5,6 +5,7 @@
 
 package phonon.nodes.objects
 
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask
 import java.util.UUID
 import java.util.concurrent.ThreadLocalRandom
 import java.util.EnumMap
@@ -122,7 +123,7 @@ public class Town(
     var isOpen: Boolean = false
 
     // players applying to town and their bukkittasks
-    val applications: HashMap<Resident, BukkitTask> = hashMapOf()
+    val applications: HashMap<Resident, ScheduledTask> = hashMapOf()
 
     // cooldown timer for moving town home territory
     var moveHomeCooldown: Long = 0L

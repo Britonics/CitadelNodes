@@ -6,6 +6,7 @@
 
 package phonon.nodes.war
 
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask
 import java.util.UUID
 import org.bukkit.Bukkit
 import org.bukkit.scheduler.BukkitTask
@@ -16,6 +17,7 @@ import phonon.nodes.Config
 import phonon.nodes.objects.Coord
 import phonon.nodes.objects.TerritoryChunk
 import phonon.nodes.objects.Town
+import java.util.concurrent.TimeUnit
 
 public class Attack(
     val attacker: UUID,        // attacker's UUID
@@ -39,7 +41,7 @@ public class Attack(
     val noBuildYMax: Int = 255 // temporarily set to height
 
     var progressColor: Int // index in progress color array
-    var thread: BukkitTask = Bukkit.getScheduler().runTaskTimerAsynchronously(Nodes.plugin!!, this, FlagWar.ATTACK_TICK, FlagWar.ATTACK_TICK)
+    var thread: ScheduledTask = Bukkit.getAsyncScheduler().runAtFixedRate(Nodes.plugin!!, { this.run() }, FlagWar.ATTACK_TICK * 50, FlagWar.ATTACK_TICK * 50, TimeUnit.MILLISECONDS)
 
     // re-used json serialization StringBuilders
     val jsonStringBase: StringBuilder
@@ -83,11 +85,9 @@ public class Attack(
         this.thread.cancel()
         
         val attack = this
-        Bukkit.getScheduler().runTask(Nodes.plugin!!, object: Runnable {
-            override fun run() {
-                FlagWar.cancelAttack(attack)
-            }
-        })
+        Bukkit.getGlobalRegionScheduler().run(Nodes.plugin!!) {
+            FlagWar.cancelAttack(attack)
+        }
     }
 
     // returns json format string as a StringBuilder

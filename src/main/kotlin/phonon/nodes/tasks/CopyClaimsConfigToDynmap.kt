@@ -28,7 +28,8 @@ public object CopyClaimsConfigToDynmap {
             + "\"territoryCost\":{\"constant\":${Config.territoryCostBase},\"scale\":${Config.territoryCostScale}}}"
         )
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, FileWriteTask(configJson, Nodes.DYNMAP_PATH_NODES_CONFIG))
+        Bukkit.getAsyncScheduler().runNow(plugin) {
+            FileWriteTask(configJson, Nodes.DYNMAP_PATH_NODES_CONFIG)
+        }
     }
-
 }

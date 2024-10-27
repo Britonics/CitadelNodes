@@ -510,7 +510,7 @@ public object Nodes {
     internal fun copyWorldtoDynmap() {
         // copy towns to dynmap folder
         if ( Nodes.dynmap || Config.dynmapCopyTowns ) {
-            Bukkit.getScheduler().runTaskAsynchronously(Nodes.plugin!!, Nodes.dynmapWriteTask)
+            Bukkit.getAsyncScheduler().runNow(Nodes.plugin!!) { Nodes.dynmapWriteTask.run() }
         }
     }
 
@@ -536,7 +536,13 @@ public object Nodes {
 
             // write file in async thread
             // callback: copy to dynmap folder when save done
-            Bukkit.getScheduler().runTaskAsynchronously(Nodes.plugin!!, FileWriteTask(json, Config.pathTowns, Nodes::copyWorldtoDynmap))
+            Bukkit.getAsyncScheduler().runNow(Nodes.plugin!!) {
+                FileWriteTask(
+                    json,
+                    Config.pathTowns,
+                    Nodes::copyWorldtoDynmap
+                )
+            }
 
             Nodes.needsSave = false
         }
@@ -568,23 +574,21 @@ public object Nodes {
             // write file in async thread
             // callback: copy to dynmap folder when save done
             // val pathTest = Paths.get(Config.pathPlugin, "towns_test.json").normalize()
-            Bukkit.getScheduler().runTaskAsynchronously(Nodes.plugin!!, object: Runnable {
-                val residents = Nodes.residents.values.toList()
-                val towns = Nodes.towns.values.toList()
-                val nations = Nodes.nations.values.toList()
+            val residents = Nodes.residents.values.toList()
+            val towns = Nodes.towns.values.toList()
+            val nations = Nodes.nations.values.toList()
 
-                override public fun run() {
-                    val json = Serializer.worldToJson(
-                        residents,
-                        towns,
-                        nations
-                    )
+            Bukkit.getAsyncScheduler().runNow(Nodes.plugin!!) {
+                val json = Serializer.worldToJson(
+                    residents,
+                    towns,
+                    nations
+                )
 
-                    saveStringToFile(json, Config.pathTowns)
+                saveStringToFile(json, Config.pathTowns)
 
-                    Nodes.copyWorldtoDynmap()
-                }
-            })
+                Nodes.copyWorldtoDynmap()
+            }
 
             Nodes.needsSave = false
         }
@@ -3047,7 +3051,13 @@ public object Nodes {
         
         // save truce.json file
         if ( Truce.needsUpdate == true ) {
-            Bukkit.getScheduler().runTaskAsynchronously(Nodes.plugin!!, FileWriteTask(Truce.toJsonString(), Config.pathTruce, null))
+            Bukkit.getAsyncScheduler().runNow(Nodes.plugin!!) {
+                FileWriteTask(
+                    Truce.toJsonString(),
+                    Config.pathTruce,
+                    null
+                )
+            }
             Truce.needsUpdate = false
         }
     }
