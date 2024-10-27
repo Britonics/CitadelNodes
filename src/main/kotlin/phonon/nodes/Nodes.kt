@@ -213,7 +213,7 @@ public object Nodes {
         }
 
         // cleanup nametags
-        if ( Nodes.protocolLib == true && Config.useNametags ) {
+        if ( Nodes.protocolLib == true && false && Config.useNametags ) {
             Nametag.clear()
         }
 

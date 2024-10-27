@@ -36,7 +36,7 @@ dynmapCopyTowns: false
 # nametag configs
 # ===================================
 # use internal armorstand teleport nametag system
-useNametags: true
+useNametags: false
 
 # ===================================
 # afk kick time
