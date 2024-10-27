@@ -6,7 +6,10 @@ Fork of the origin minecraft-nodes project by phonon
 I have no intention of supporting older versions, if you are on an outdated version, update.
 Other plugin modules such as the dynmap and ports plugin will be moved to seperate repos.
 
+## Notable Changes
+* Folia Support
 
+## Original README
 Map painting but in block game. Contains server plugin and nodes dynmap viewer/editor extension.
 
 **Documentation:** <https://nodes.soy>  
@@ -129,7 +132,7 @@ are edited in `nodes/` source before re-building documentation site.
 
 ## 4. Building ports plugin
 Requirements:
-- Java JDK 16 (current plugin target java version)
+- Java JDK 17 (current plugin target java version)
 
 ### 1. Build main `nodes` plugin first (follow steps above).
 Make sure there is the nodes output `.jar` at path
