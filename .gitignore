@@ -9,3 +9,6 @@ build
 
 # ignore vscode
 .vscode
+
+# ignore run server
+run

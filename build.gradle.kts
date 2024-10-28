@@ -9,8 +9,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
-// disable default versioning
-version = "0.0.10"
+version = "0.0.11"
 
 // jvm target
 val JVM = 17 // 1.8 for 8, 11 for 11
@@ -28,6 +27,7 @@ plugins {
     // Apply the Kotlin JVM plugin to add support for Kotlin.
     id("org.jetbrains.kotlin.jvm") version "2.0.20"
     id("com.gradleup.shadow") version "8.3.2"
+    id("xyz.jpenilla.run-paper") version "2.3.1"
 
     // maven() // no longer needed in gradle 7
 
@@ -127,6 +127,10 @@ tasks {
 }
 
 tasks {
+    runServer {
+        minecraftVersion("1.21.1")
+    }
+
     processResources {
         val props = mapOf(
             "version" to project.version,
@@ -148,11 +152,19 @@ tasks {
     shadowJar {
         relocate("com.google", "nodes.shadow.gson")
         if (project.hasProperty("prod")) {
-            archiveBaseName.set("${project.name}-${target}-${version}")
+            archiveFileName.set("${project.name}-${target}-${version}.jar")
             minimize() // FOR PRODUCTION USE MINIMIZE
         }
         else {
             archiveFileName.set("${project.name}-${target}-${version}-DEV-${executeCommand("git rev-parse --short HEAD")}.jar")
         }
     }
+}
+
+tasks.withType(xyz.jpenilla.runtask.task.AbstractRun::class) {
+    javaLauncher = javaToolchains.launcherFor {
+        vendor = JvmVendorSpec.JETBRAINS
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    jvmArgs("-XX:+AllowEnhancedClassRedefinition")
 }
