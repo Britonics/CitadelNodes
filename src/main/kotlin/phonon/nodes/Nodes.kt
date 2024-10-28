@@ -53,9 +53,9 @@ private val BACKUP_DATE_FORMATTER = SimpleDateFormat("yyyy.MM.dd.HH.mm.ss");
  * Nodes container
  */
 public object Nodes {
-    
+
     // version string
-    internal val version: String = "1.16.5 v0.0.10"
+    internal var version: String = ""
 
     // library of resource node definitions
     internal val resourceNodes: HashMap<String, ResourceNode> = hashMapOf()

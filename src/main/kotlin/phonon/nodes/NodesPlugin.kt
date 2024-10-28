@@ -133,6 +133,9 @@ public class NodesPlugin : JavaPlugin() {
         // initialize all players online
         Nodes.initializeOnlinePlayers()
 
+        // set version
+        Nodes.version = this.pluginMeta.version
+
         // set final initialized flag
         Nodes.initialized = true
         Nodes.enabled = true
