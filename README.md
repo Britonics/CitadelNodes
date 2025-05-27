@@ -1,3 +1,4 @@
+# archived
 # znodes
 ![Nodes map screenshot](https://i.ibb.co/GcccyBs/nodes-map-example.jpg)
 
