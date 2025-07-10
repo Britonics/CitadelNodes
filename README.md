@@ -1,8 +1,8 @@
-# archived
-# znodes
+# IN PRODUCTION
+# Citadel Nodes
 ![Nodes map screenshot](https://i.ibb.co/GcccyBs/nodes-map-example.jpg)
 
-Fork of the origin minecraft-nodes project by phonon
+Fusion of Citadel plugin and nodes plugin, Ignore everything below this.
 
 I have no intention of supporting older versions, if you are on an outdated version, update.
 Other plugin modules such as the dynmap and ports plugin will be moved to seperate repos.
