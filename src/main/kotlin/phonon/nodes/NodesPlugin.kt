@@ -143,11 +143,11 @@ public class NodesPlugin : JavaPlugin() {
         logger.info("Enabled in ${timeLoad}ms")
 
         // print success message
-        logger.info("now this is epic")
+        logger.info("We may lose BUT we are NOT losing Citadel")
     }
 
     override fun onDisable() {
-        logger.info("wtf i hate xeth now")
+        logger.info("wtf i hate Milzzy now")
 
         Nodes.enabled = false
 
